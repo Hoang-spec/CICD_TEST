@@ -12,6 +12,6 @@ WORKDIR /usr/share/nginx/html
 # Xoá file mặc định của Nginx
 RUN rm -rf ./*
 # Copy file đã build từ Stage 1 sang Stage 2
-COPY --from=builder /app/build ./
+COPY --from=builder /app/dist ./
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
