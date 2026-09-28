@@ -1,0 +1,90 @@
+{
+  "users": [
+    {
+      "id": "USR-ADMIN",
+      "firstName": "Admin",
+      "lastName": "User",
+      "email": "admin@example.com",
+      "passwordHash": "$2b$10$oPOyI07YTcWoDA9daNGOVOQuyz6C3qwh7bfazDt4iT.MQK0sjzcQy",
+      "role": "admin",
+      "createdAt": "2026-09-28T08:00:02.854Z"
+    },
+    {
+      "id": "USR-CLIENT",
+      "firstName": "Client",
+      "lastName": "User",
+      "email": "client@example.com",
+      "passwordHash": "$2b$10$vL8mMylSrUeZ6EgZIuX3PeEytMW4wKYYN9vulMBcOzCjRZz4/6JV.",
+      "role": "client",
+      "createdAt": "2026-09-28T08:00:02.910Z"
+    }
+  ],
+  "products": [
+    {
+      "id": "PRD-001",
+      "name": "Erbology Aloe Vera",
+      "category": "Body care",
+      "description": "Gel làm dịu và cấp ẩm sâu cho làn da mỗi ngày.",
+      "price": 24,
+      "oldPrice": null,
+      "image": "/assets/product-1.png",
+      "accent": "#e4f0e8",
+      "badge": "Bán chạy",
+      "stock": 20,
+      "active": true
+    },
+    {
+      "id": "PRD-002",
+      "name": "Lancôme Rouge",
+      "category": "Makeup",
+      "description": "Sắc son satin mềm mịn, lưu màu tự nhiên cả ngày.",
+      "price": 32,
+      "oldPrice": 38,
+      "image": "/assets/product-2.png",
+      "accent": "#f7e6df",
+      "badge": "-15%",
+      "stock": 15,
+      "active": true
+    },
+    {
+      "id": "PRD-003",
+      "name": "Ritual of Sakura",
+      "category": "Body care",
+      "description": "Nghi thức chăm sóc cơ thể lấy cảm hứng từ hoa anh đào.",
+      "price": 29,
+      "oldPrice": null,
+      "image": "/assets/product-3.png",
+      "accent": "#f3e9e6",
+      "badge": null,
+      "stock": 18,
+      "active": true
+    },
+    {
+      "id": "PRD-004",
+      "name": "Nécessaire Body Lotion",
+      "category": "Body care",
+      "description": "Dưỡng thể tối giản với kết cấu nhẹ, thấm nhanh.",
+      "price": 26,
+      "oldPrice": null,
+      "image": "/assets/product-4.png",
+      "accent": "#e8edf0",
+      "badge": null,
+      "stock": 12,
+      "active": true
+    },
+    {
+      "id": "PRD-005",
+      "name": "Soja & Co. Eucalyptus",
+      "category": "Home scent",
+      "description": "Nến thơm đậu nành mang không gian xanh vào căn phòng.",
+      "price": 30,
+      "oldPrice": null,
+      "image": "/assets/product-5.png",
+      "accent": "#e8eee8",
+      "badge": null,
+      "stock": 10,
+      "active": true
+    }
+  ],
+  "orders": []
+}

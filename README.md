@@ -39,9 +39,11 @@ to save more time and design efforts :)
 
 - Clone the repo: `git clone https://github.com/devias-io/material-kit-react.git`
 - Make sure your Node.js and npm versions are up to date
-- Install dependencies: `npm install` or `yarn`
-- Start the server: `npm run dev` or `yarn dev`
+- Start the API in a separate terminal: `cd backend && npm install && npm run dev` (API at `http://localhost:4000`)
+- Install frontend dependencies from the project root: `npm install` or `yarn`
+- Start the frontend: `npm run dev` or `yarn dev`
 - Open browser: `http://localhost:3000`
+- Admin demo login: `admin@example.com` / `Admin123`
 
 ## File Structure
 

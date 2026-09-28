@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import RouterLink from 'next/link';
-import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
@@ -32,8 +31,6 @@ type Values = zod.infer<typeof schema>;
 const defaultValues = { email: 'admin@example.com', password: 'Admin123' } satisfies Values;
 
 export function SignInForm(): React.JSX.Element {
-  const router = useRouter();
-
   const { checkSession } = useUser();
 
   const [showPassword, setShowPassword] = React.useState<boolean>();
@@ -51,22 +48,25 @@ export function SignInForm(): React.JSX.Element {
     async (values: Values): Promise<void> => {
       setIsPending(true);
 
-      const { error } = await authClient.signInWithPassword(values);
+      try {
+        const { error } = await authClient.signInWithPassword(values);
 
-      if (error) {
-        setError('root', { type: 'server', message: error });
+        if (error) {
+          setError('root', { type: 'server', message: error });
+          return;
+        }
+
+        const { data: user } = await authClient.getUser();
+
+        await checkSession?.();
+        globalThis.location.assign(user?.role === 'client' ? paths.shop : paths.dashboard.overview);
+      } catch {
+        setError('root', { type: 'server', message: 'Không kết nối được backend. Hãy chạy API ở cổng 4000 rồi thử lại.' });
+      } finally {
         setIsPending(false);
-        return;
       }
-
-      const { data: user } = await authClient.getUser();
-
-      // Refresh the auth state before navigating to the role-specific area.
-      await checkSession?.();
-
-      router.replace(user?.role === 'client' ? '/shop' : paths.dashboard.overview);
     },
-    [checkSession, router, setError]
+    [checkSession, setError]
   );
 
   return (

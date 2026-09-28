@@ -4,10 +4,10 @@ export interface Product {
   category: string;
   description: string;
   price: number;
-  oldPrice?: number;
+  oldPrice?: number | null;
   image: string;
   accent: string;
-  badge?: string;
+  badge?: string | null;
 }
 
 export const products: Product[] = [

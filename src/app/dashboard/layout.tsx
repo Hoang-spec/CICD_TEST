@@ -4,6 +4,7 @@ import Container from '@mui/material/Container';
 import GlobalStyles from '@mui/material/GlobalStyles';
 
 import { AuthGuard } from '@/components/auth/auth-guard';
+import { AdminGuard } from '@/components/auth/admin-guard';
 import { MainNav } from '@/components/dashboard/layout/main-nav';
 import { SideNav } from '@/components/dashboard/layout/side-nav';
 
@@ -14,6 +15,7 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps): React.JSX.Element {
   return (
     <AuthGuard>
+      <AdminGuard>
       <GlobalStyles
         styles={{
           body: {
@@ -45,6 +47,7 @@ export default function Layout({ children }: LayoutProps): React.JSX.Element {
           </main>
         </Box>
       </Box>
+      </AdminGuard>
     </AuthGuard>
   );
 }

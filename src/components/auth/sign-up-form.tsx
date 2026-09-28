@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import RouterLink from 'next/link';
-import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
@@ -35,8 +34,6 @@ type Values = zod.infer<typeof schema>;
 const defaultValues = { firstName: '', lastName: '', email: '', password: '', terms: false } satisfies Values;
 
 export function SignUpForm(): React.JSX.Element {
-  const router = useRouter();
-
   const { checkSession } = useUser();
 
   const [isPending, setIsPending] = React.useState<boolean>(false);
@@ -63,11 +60,10 @@ export function SignUpForm(): React.JSX.Element {
       // Refresh the auth state
       await checkSession?.();
 
-      // UserProvider, for this case, will not refresh the router
-      // After refresh, GuestGuard will handle the redirect
-      router.refresh();
+      // Reload the app so the root UserProvider reads the newly stored session.
+      globalThis.location.assign(paths.shop);
     },
-    [checkSession, router, setError]
+    [checkSession, setError]
   );
 
   return (

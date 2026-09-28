@@ -18,10 +18,6 @@ import dayjs from 'dayjs';
 
 import { useSelection } from '@/hooks/use-selection';
 
-function noop(): void {
-  // do nothing
-}
-
 export interface Customer {
   id: string;
   avatar: string;
@@ -30,6 +26,8 @@ export interface Customer {
   address: { city: string; state: string; country: string; street: string };
   phone: string;
   createdAt: Date;
+  orderCount?: number;
+  totalSpent?: number;
 }
 
 interface CustomersTableProps {
@@ -37,6 +35,8 @@ interface CustomersTableProps {
   page?: number;
   rows?: Customer[];
   rowsPerPage?: number;
+  onPageChange?: (page: number) => void;
+  onRowsPerPageChange?: (rowsPerPage: number) => void;
 }
 
 export function CustomersTable({
@@ -44,6 +44,8 @@ export function CustomersTable({
   rows = [],
   page = 0,
   rowsPerPage = 0,
+  onPageChange,
+  onRowsPerPageChange,
 }: CustomersTableProps): React.JSX.Element {
   const rowIds = React.useMemo(() => {
     return rows.map((customer) => customer.id);
@@ -77,6 +79,7 @@ export function CustomersTable({
               <TableCell>Email</TableCell>
               <TableCell>Location</TableCell>
               <TableCell>Phone</TableCell>
+              <TableCell>Orders / spent</TableCell>
               <TableCell>Signed Up</TableCell>
             </TableRow>
           </TableHead>
@@ -109,6 +112,7 @@ export function CustomersTable({
                     {row.address.city}, {row.address.state}, {row.address.country}
                   </TableCell>
                   <TableCell>{row.phone}</TableCell>
+                  <TableCell>{row.orderCount ?? 0} / ${Number(row.totalSpent ?? 0).toFixed(2)}</TableCell>
                   <TableCell>{dayjs(row.createdAt).format('MMM D, YYYY')}</TableCell>
                 </TableRow>
               );
@@ -120,8 +124,8 @@ export function CustomersTable({
       <TablePagination
         component="div"
         count={count}
-        onPageChange={noop}
-        onRowsPerPageChange={noop}
+        onPageChange={(_event, nextPage) => onPageChange?.(nextPage)}
+        onRowsPerPageChange={(event) => onRowsPerPageChange?.(Number(event.target.value))}
         page={page}
         rowsPerPage={rowsPerPage}
         rowsPerPageOptions={[5, 10, 25]}

@@ -18,18 +18,37 @@ import Typography from '@mui/material/Typography';
 import { CaretRight, Heart, MagnifyingGlass, Minus, Plus, ShoppingBag, Sparkle, X } from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
-import { products, type Product } from '@/lib/shop-products';
-
-const categories = ['All products', 'Body care', 'Makeup', 'Home scent'];
+import { authClient } from '@/lib/auth/client';
+import { useUser } from '@/hooks/use-user';
+import { products as fallbackProducts, type Product } from '@/lib/shop-products';
 
 export default function ShopPage(): React.JSX.Element {
   const router = useRouter();
+  const { user, isLoading, checkSession } = useUser();
+  const [hasShopSession, setHasShopSession] = React.useState(false);
   const [category, setCategory] = React.useState('All products');
   const [search, setSearch] = React.useState('');
   const [cart, setCart] = React.useState<Record<string, number>>({});
   const [isCartLoaded, setIsCartLoaded] = React.useState(false);
   const [isCartOpen, setIsCartOpen] = React.useState(false);
   const [selectedProduct, setSelectedProduct] = React.useState<Product | null>(null);
+  const [products, setProducts] = React.useState<Product[]>(fallbackProducts);
+  const categories = React.useMemo(() => ['All products', ...new Set(products.map((product) => product.category))], [products]);
+
+  React.useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+    fetch(`${apiUrl}/api/products`)
+      .then(async (response) => {
+        if (!response.ok) throw new Error('Could not load catalog');
+        const result = (await response.json()) as { data: Product[] };
+        setProducts(result.data);
+      })
+      .catch(() => { /* Keep the bundled catalog available when the API is offline. */ });
+  }, []);
+
+  React.useEffect(() => {
+    authClient.getUser().then(({ data }) => setHasShopSession(Boolean(data))).catch(() => setHasShopSession(false));
+  }, []);
 
   React.useEffect(() => {
     const savedCart = globalThis.localStorage.getItem('atelier-cart');
@@ -65,6 +84,19 @@ export default function ShopPage(): React.JSX.Element {
   const cartCount = Object.values(cart).reduce((total, quantity) => total + quantity, 0);
   const cartTotal = cartProducts.reduce((total, product) => total + product.price * cart[product.id], 0);
 
+  const handleSignOut = async (): Promise<void> => {
+    await authClient.signOut();
+    setHasShopSession(false);
+    await checkSession?.();
+    router.refresh();
+  };
+
+  const handleAuthNavigation = async (destination: string): Promise<void> => {
+    await authClient.signOut();
+    await checkSession?.();
+    globalThis.location.assign(destination);
+  };
+
   return (
     <Box className="shop-page">
       <Box component="header" className="shop-header">
@@ -83,8 +115,10 @@ export default function ShopPage(): React.JSX.Element {
               <MagnifyingGlass size={20} />
             </IconButton>
             <Box className="account-links">
-              <Button component={RouterLink} href={paths.auth.signIn} className="account-login">Đăng nhập</Button>
-              <Button component={RouterLink} href={paths.auth.signUp} className="account-signup">Đăng ký</Button>
+              {isLoading ? null : user || hasShopSession ? <Button onClick={handleSignOut} className="account-signup">Đăng xuất</Button> : <>
+                <Button component={RouterLink} href={paths.auth.signIn} className="account-login" onClick={(event) => { event.preventDefault(); void handleAuthNavigation(paths.auth.signIn); }}>Đăng nhập</Button>
+                <Button component={RouterLink} href={paths.auth.signUp} className="account-signup" onClick={(event) => { event.preventDefault(); void handleAuthNavigation(paths.auth.signUp); }}>Đăng ký</Button>
+              </>}
             </Box>
             <Button className="cart-button" onClick={() => setIsCartOpen(true)} startIcon={<ShoppingBag size={19} />}>
               Bag <span className="cart-count">{cartCount}</span>
