@@ -3,6 +3,7 @@ export interface User {
   name?: string;
   avatar?: string;
   email?: string;
+  role?: 'admin' | 'client';
 
   [key: string]: unknown;
 }

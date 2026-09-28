@@ -29,7 +29,7 @@ const schema = zod.object({
 
 type Values = zod.infer<typeof schema>;
 
-const defaultValues = { email: 'sofia@devias.io', password: 'Secret1' } satisfies Values;
+const defaultValues = { email: 'admin@example.com', password: 'Admin123' } satisfies Values;
 
 export function SignInForm(): React.JSX.Element {
   const router = useRouter();
@@ -59,12 +59,12 @@ export function SignInForm(): React.JSX.Element {
         return;
       }
 
-      // Refresh the auth state
+      const { data: user } = await authClient.getUser();
+
+      // Refresh the auth state before navigating to the role-specific area.
       await checkSession?.();
 
-      // UserProvider, for this case, will not refresh the router
-      // After refresh, GuestGuard will handle the redirect
-      router.refresh();
+      router.replace(user?.role === 'client' ? '/shop' : paths.dashboard.overview);
     },
     [checkSession, router, setError]
   );
@@ -139,13 +139,13 @@ export function SignInForm(): React.JSX.Element {
         </Stack>
       </form>
       <Alert color="warning">
-        Use{' '}
+        Admin: {' '}
         <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
-          sofia@devias.io
+          admin@example.com / Admin123
         </Typography>{' '}
-        with password{' '}
+        Client: {' '}
         <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
-          Secret1
+          client@example.com / Client123
         </Typography>
       </Alert>
     </Stack>

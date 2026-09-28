@@ -1,5 +1,7 @@
 export const paths = {
   home: '/',
+  shop: '/shop',
+  checkout: '/checkout',
   auth: { signIn: '/auth/sign-in', signUp: '/auth/sign-up', resetPassword: '/auth/reset-password' },
   dashboard: {
     overview: '/dashboard',

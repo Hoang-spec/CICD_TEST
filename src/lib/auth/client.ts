@@ -8,13 +8,26 @@ function generateToken(): string {
   return Array.from(arr, (v) => v.toString(16).padStart(2, '0')).join('');
 }
 
-const user = {
-  id: 'USR-000',
-  avatar: '/assets/avatar.png',
-  firstName: 'Sofia',
-  lastName: 'Rivers',
-  email: 'sofia@devias.io',
-} satisfies User;
+const users = [
+  {
+    id: 'USR-ADMIN',
+    avatar: '/assets/avatar.png',
+    firstName: 'Admin',
+    lastName: 'User',
+    email: 'admin@example.com',
+    password: 'Admin123',
+    role: 'admin',
+  },
+  {
+    id: 'USR-CLIENT',
+    avatar: '/assets/avatar.png',
+    firstName: 'Client',
+    lastName: 'User',
+    email: 'client@example.com',
+    password: 'Client123',
+    role: 'client',
+  },
+] satisfies Array<User & { password: string }>;
 
 export interface SignUpParams {
   firstName: string;
@@ -43,6 +56,7 @@ class AuthClient {
     // We do not handle the API, so we'll just generate a token and store it in localStorage.
     const token = generateToken();
     localStorage.setItem('custom-auth-token', token);
+    localStorage.setItem('custom-auth-user-id', 'USR-CLIENT');
 
     return {};
   }
@@ -56,13 +70,16 @@ class AuthClient {
 
     // Make API request
 
-    // We do not handle the API, so we'll check if the credentials match with the hardcoded ones.
-    if (email !== 'sofia@devias.io' || password !== 'Secret1') {
+    // We do not handle the API, so we'll check the credentials against the demo users.
+    const user = users.find((candidate) => candidate.email === email && candidate.password === password);
+
+    if (!user) {
       return { error: 'Invalid credentials' };
     }
 
     const token = generateToken();
     localStorage.setItem('custom-auth-token', token);
+    localStorage.setItem('custom-auth-user-id', user.id);
 
     return {};
   }
@@ -85,11 +102,20 @@ class AuthClient {
       return { data: null };
     }
 
-    return { data: user };
+    const userId = localStorage.getItem('custom-auth-user-id');
+    const authenticatedUser = users.find((candidate) => candidate.id === userId);
+
+    if (!authenticatedUser) {
+      return { data: null };
+    }
+
+    const { password: _, ...safeUser } = authenticatedUser;
+    return { data: safeUser };
   }
 
   async signOut(): Promise<{ error?: string }> {
     localStorage.removeItem('custom-auth-token');
+    localStorage.removeItem('custom-auth-user-id');
 
     return {};
   }

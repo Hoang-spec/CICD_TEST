@@ -28,8 +28,9 @@ export function GuestGuard({ children }: GuestGuardProps): React.JSX.Element | n
     }
 
     if (user) {
-      logger.debug('[GuestGuard]: User is logged in, redirecting to dashboard');
-      router.replace(paths.dashboard.overview);
+      const destination = user.role === 'client' ? '/shop' : paths.dashboard.overview;
+      logger.debug(`[GuestGuard]: User is logged in, redirecting to ${destination}`);
+      router.replace(destination);
       return;
     }
 
