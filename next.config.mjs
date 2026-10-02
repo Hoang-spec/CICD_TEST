@@ -7,4 +7,4 @@ const nextConfig = {
   // Nếu có các cấu hình khác đang tồn tại, hãy giữ nguyên ở dưới
 };
 
-export default nextConfig;
+export default nextConfig;  
