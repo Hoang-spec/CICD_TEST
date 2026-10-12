@@ -43,7 +43,7 @@ to save more time and design efforts :)
 - Install frontend dependencies from the project root: `npm install` or `yarn`
 - Start the frontend: `npm run dev` or `yarn dev`
 - Open browser: `http://localhost:3000`
-- Admin demo login: `admin@example.com` / `Admin123`
+- Admin login: `admin@gmail.com` / `admin123`
 
 ## File Structure
 

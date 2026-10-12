@@ -2,7 +2,7 @@
 
 Express API for the Material Kit storefront and dashboard. Start it with `npm run dev` from this directory. The API stores data in `data/db.json`; the file is created with demo data on first run.
 
-Set `JWT_SECRET` to a long random value and `CLIENT_ORIGIN` to the frontend URL. The built-in demo accounts are `admin@example.com` / `Admin123` and `client@example.com` / `Client123`.
+Set `JWT_SECRET` to a long random value and `CLIENT_ORIGIN` to the frontend URL. The built-in accounts are `admin@gmail.com` / `admin123` and `client@example.com` / `Client123`. Production credentials are configured with `ADMIN_EMAIL` and `ADMIN_PASSWORD_B64`.
 
 All protected routes use `Authorization: Bearer <token>`. Admin-only routes require signing in as the admin account.
 

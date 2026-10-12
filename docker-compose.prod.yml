@@ -1,0 +1,32 @@
+services:
+  backend:
+    image: ${DOCKERHUB_USERNAME}/material-kit-react-backend:${IMAGE_TAG:-latest}
+    environment:
+      PORT: 4000
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in the server .env file}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:?Set ADMIN_EMAIL in the server .env file}
+      ADMIN_PASSWORD_B64: ${ADMIN_PASSWORD_B64:?Set ADMIN_PASSWORD_B64 in the server .env file}
+      NODE_ENV: production
+      CLIENT_ORIGIN: ${CLIENT_ORIGIN:?Set CLIENT_ORIGIN in the server .env file}
+    ports:
+      - "${BACKEND_PORT:-4000}:4000"
+    volumes:
+      - backend-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME}/material-kit-react-frontend:${IMAGE_TAG:-latest}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  backend-data:

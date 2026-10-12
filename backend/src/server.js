@@ -13,12 +13,23 @@ const dataDirectory = path.join(__dirname, '..', 'data');
 const dataFile = path.join(dataDirectory, 'db.json');
 const port = Number(process.env.PORT ?? 4000);
 const jwtSecret = process.env.JWT_SECRET ?? 'development-only-secret';
+const isProduction = process.env.NODE_ENV === 'production';
+
+const adminPassword = process.env.ADMIN_PASSWORD_B64
+  ? Buffer.from(process.env.ADMIN_PASSWORD_B64, 'base64').toString('utf8')
+  : process.env.ADMIN_PASSWORD;
+
+if (isProduction && (!process.env.JWT_SECRET || !process.env.ADMIN_EMAIL || !adminPassword || !process.env.CLIENT_ORIGIN)) {
+  throw new Error('Production requires JWT_SECRET, ADMIN_EMAIL, ADMIN_PASSWORD_B64, and CLIENT_ORIGIN');
+}
 
 const seedData = {
-  users: [
-    { id: 'USR-ADMIN', firstName: 'Admin', lastName: 'User', email: 'admin@example.com', passwordHash: bcrypt.hashSync('Admin123', 10), role: 'admin', createdAt: new Date().toISOString() },
-    { id: 'USR-CLIENT', firstName: 'Client', lastName: 'User', email: 'client@example.com', passwordHash: bcrypt.hashSync('Client123', 10), role: 'client', createdAt: new Date().toISOString() },
-  ],
+  users: isProduction
+    ? [{ id: 'USR-ADMIN', firstName: 'Admin', lastName: 'User', email: process.env.ADMIN_EMAIL.trim().toLowerCase(), passwordHash: bcrypt.hashSync(adminPassword, 10), role: 'admin', createdAt: new Date().toISOString() }]
+    : [
+      { id: 'USR-ADMIN', firstName: 'Admin', lastName: 'User', email: 'admin@gmail.com', passwordHash: bcrypt.hashSync('admin123', 10), role: 'admin', createdAt: new Date().toISOString() },
+      { id: 'USR-CLIENT', firstName: 'Client', lastName: 'User', email: 'client@example.com', passwordHash: bcrypt.hashSync('Client123', 10), role: 'client', createdAt: new Date().toISOString() },
+    ],
   products: [
     { id: 'PRD-001', name: 'Erbology Aloe Vera', category: 'Body care', description: 'Gel làm dịu và cấp ẩm sâu cho làn da mỗi ngày.', price: 24, oldPrice: null, image: '/assets/product-1.png', accent: '#e4f0e8', badge: 'Bán chạy', stock: 20, active: true },
     { id: 'PRD-002', name: 'Lancôme Rouge', category: 'Makeup', description: 'Sắc son satin mềm mịn, lưu màu tự nhiên cả ngày.', price: 32, oldPrice: 38, image: '/assets/product-2.png', accent: '#f7e6df', badge: '-15%', stock: 15, active: true },
@@ -291,5 +302,4 @@ app.use((error, _request, response, _next) => {
   return response.status(500).json({ error: 'Internal server error' });
 });
 
-if (!jwtSecret && process.env.NODE_ENV === 'production') throw new Error('JWT_SECRET must be set in production');
 app.listen(port, () => console.log(`Atelier backend listening on http://localhost:${port}`));
