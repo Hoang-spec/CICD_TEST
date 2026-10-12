@@ -1,8 +1,7 @@
 'use client';
 
 import type { User } from '@/types/user';
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
+import { apiConnectionError, apiEndpoint } from '@/lib/api-url';
 
 interface AuthResponse {
   data?: User;
@@ -11,11 +10,21 @@ interface AuthResponse {
 }
 
 async function requestAuth(path: string, options?: RequestInit): Promise<AuthResponse> {
-  const response = await fetch(`${apiUrl}${path}`, {
-    ...options,
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-  });
-  return (await response.json()) as AuthResponse;
+  const endpoint = apiEndpoint(path);
+  let response: Response;
+  try {
+    response = await fetch(endpoint, {
+      ...options,
+      headers: { 'Content-Type': 'application/json', ...options?.headers },
+    });
+  } catch {
+    throw apiConnectionError();
+  }
+  try {
+    return (await response.json()) as AuthResponse;
+  } catch {
+    throw new Error(`Backend trả về phản hồi không hợp lệ (HTTP ${response.status}).`);
+  }
 }
 
 export interface SignUpParams {

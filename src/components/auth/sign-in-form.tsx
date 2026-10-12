@@ -28,7 +28,7 @@ const schema = zod.object({
 
 type Values = zod.infer<typeof schema>;
 
-const defaultValues = { email: 'admin@gmail.com', password: 'admin123' } satisfies Values;
+const defaultValues = { email: '', password: '' } satisfies Values;
 
 export function SignInForm(): React.JSX.Element {
   const { checkSession } = useUser();
@@ -60,8 +60,11 @@ export function SignInForm(): React.JSX.Element {
 
         await checkSession?.();
         globalThis.location.assign(user?.role === 'client' ? paths.shop : paths.dashboard.overview);
-      } catch {
-        setError('root', { type: 'server', message: 'Không kết nối được backend. Hãy chạy API ở cổng 4000 rồi thử lại.' });
+      } catch (reason) {
+        setError('root', {
+          type: 'server',
+          message: reason instanceof Error ? reason.message : 'Không thể đăng nhập. Vui lòng thử lại.',
+        });
       } finally {
         setIsPending(false);
       }

@@ -45,6 +45,12 @@ to save more time and design efforts :)
 - Open browser: `http://localhost:3000`
 - Admin login: `admin@gmail.com` / `admin123`
 
+### Render deployment
+
+Deploy the API as a public Render Web Service and the Next.js app as a separate Web Service. In the **frontend** service, set `NEXT_PUBLIC_API_URL` to the backend's public base URL (for example, `https://atelier-api.onrender.com`, without a trailing slash). Next.js embeds `NEXT_PUBLIC_*` values during the build, so save the variable and trigger a new frontend deploy after changing it. In the **backend** service, set `CLIENT_ORIGIN` to the exact frontend origin (for example, `https://atelier-shop.onrender.com`), plus `JWT_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD_B64`. The production admin signs in with the configured `ADMIN_EMAIL` and the original password entered before it was base64-encoded for `ADMIN_PASSWORD_B64`.
+
+Verify the API URL by opening `<backend-url>/api/health`; it should return `{"status":"ok","service":"atelier-backend"}`. The value configured in the frontend must point to that same backend service.
+
 ## File Structure
 
 Within the download you'll find the following directories and files:

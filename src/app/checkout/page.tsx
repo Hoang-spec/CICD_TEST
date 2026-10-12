@@ -16,9 +16,8 @@ import Typography from '@mui/material/Typography';
 import { ArrowLeft, Check, Minus, Plus, ShoppingBag } from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
+import { apiConnectionError, apiEndpoint } from '@/lib/api-url';
 import { products as fallbackProducts, type Product } from '@/lib/shop-products';
-
-const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 
 export default function CheckoutPage(): React.JSX.Element {
   const router = useRouter();
@@ -35,7 +34,9 @@ export default function CheckoutPage(): React.JSX.Element {
   }, []);
 
   React.useEffect(() => {
-    fetch(`${apiUrl}/api/products`)
+    let endpoint: string;
+    try { endpoint = apiEndpoint('/api/products'); } catch { return; }
+    fetch(endpoint)
       .then(async (response) => {
         if (!response.ok) throw new Error('Could not load catalog');
         const result = (await response.json()) as { data: Product[] };
@@ -68,7 +69,7 @@ export default function CheckoutPage(): React.JSX.Element {
     const formData = new FormData(event.currentTarget);
     try {
       const token = globalThis.localStorage.getItem('custom-auth-token');
-      const response = await fetch(`${apiUrl}/api/orders`, {
+      const response = await fetch(apiEndpoint('/api/orders'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,8 +98,8 @@ export default function CheckoutPage(): React.JSX.Element {
       globalThis.localStorage.removeItem('atelier-cart');
       setCart({});
       setIsComplete(true);
-    } catch {
-      setSubmitError('Không thể kết nối tới máy chủ. Vui lòng thử lại sau.');
+    } catch (reason) {
+      setSubmitError(reason instanceof Error ? reason.message : apiConnectionError().message);
     } finally {
       setIsSubmitting(false);
     }

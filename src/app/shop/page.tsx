@@ -19,6 +19,7 @@ import { CaretRight, Heart, MagnifyingGlass, Minus, Plus, ShoppingBag, Sparkle, 
 
 import { paths } from '@/paths';
 import { authClient } from '@/lib/auth/client';
+import { apiEndpoint } from '@/lib/api-url';
 import { useUser } from '@/hooks/use-user';
 import { products as fallbackProducts, type Product } from '@/lib/shop-products';
 
@@ -36,8 +37,9 @@ export default function ShopPage(): React.JSX.Element {
   const categories = React.useMemo(() => ['All products', ...new Set(products.map((product) => product.category))], [products]);
 
   React.useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
-    fetch(`${apiUrl}/api/products`)
+    let endpoint: string;
+    try { endpoint = apiEndpoint('/api/products'); } catch { return; }
+    fetch(endpoint)
       .then(async (response) => {
         if (!response.ok) throw new Error('Could not load catalog');
         const result = (await response.json()) as { data: Product[] };
