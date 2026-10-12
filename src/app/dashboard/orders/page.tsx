@@ -15,39 +15,30 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
-import { adminRequest } from '@/lib/admin-api';
-
-interface Order {
-  id: string;
-  customer: { name: string; email: string; city?: string };
-  items: { name: string; quantity: number; price: number }[];
-  total: number;
-  status: string;
-  paymentMethod: string;
-  createdAt: string;
-}
+import { getDemoOrders, updateDemoOrderStatus } from '@/lib/demo-store';
+import type { DemoOrder } from '@/lib/demo-store';
 
 const statuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
 const statusLabels: Record<string, string> = { pending: 'Chờ xử lý', processing: 'Đang chuẩn bị', shipped: 'Đang giao', delivered: 'Đã giao', cancelled: 'Đã hủy' };
 
 export default function Page(): React.JSX.Element {
-  const [orders, setOrders] = React.useState<Order[]>([]);
+  const [orders, setOrders] = React.useState<DemoOrder[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
-  const loadOrders = React.useCallback(async () => {
+  const loadOrders = React.useCallback(() => {
     setLoading(true);
-    try { const result = await adminRequest<{ data: Order[] }>('/api/orders'); setOrders(result.data); setError(null); }
-    catch (reason) { setError((reason as Error).message); }
-    finally { setLoading(false); }
+    setOrders(getDemoOrders());
+    setError(null);
+    setLoading(false);
   }, []);
 
   React.useEffect(() => { void loadOrders(); }, [loadOrders]);
 
-  const updateStatus = async (order: Order, status: string): Promise<void> => {
+  const updateStatus = async (order: DemoOrder, status: DemoOrder['status']): Promise<void> => {
     try {
-      const result = await adminRequest<{ data: Order }>(`/api/orders/${order.id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
-      setOrders((current) => current.map((item) => item.id === order.id ? result.data : item));
+      const updated = updateDemoOrderStatus(order.id, status);
+      setOrders((current) => current.map((item) => item.id === order.id ? updated : item));
       setError(null);
     } catch (reason) { setError((reason as Error).message); }
   };
@@ -65,7 +56,7 @@ export default function Page(): React.JSX.Element {
         <TableCell>${Number(order.total).toFixed(2)}</TableCell>
         <TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
         <TableCell><Stack spacing={1} alignItems="flex-start"><Chip size="small" label={statusLabels[order.status] ?? order.status} color={order.status === 'delivered' ? 'success' : order.status === 'cancelled' ? 'error' : 'default'} />
-          {order.status !== 'delivered' && order.status !== 'cancelled' && <Select size="small" value={order.status} onChange={(event) => void updateStatus(order, event.target.value)} sx={{ minWidth: 150 }}>
+          {order.status !== 'delivered' && order.status !== 'cancelled' && <Select size="small" value={order.status} onChange={(event) => void updateStatus(order, event.target.value as DemoOrder['status'])} sx={{ minWidth: 150 }}>
             {statuses.filter((status) => status === order.status || (order.status === 'pending' && ['processing', 'cancelled'].includes(status)) || (order.status === 'processing' && ['shipped', 'cancelled'].includes(status)) || (order.status === 'shipped' && status === 'delivered')).map((status) => <MenuItem key={status} value={status}>{statusLabels[status]}</MenuItem>)}
           </Select>}</Stack></TableCell>
       </TableRow>)}</TableBody>

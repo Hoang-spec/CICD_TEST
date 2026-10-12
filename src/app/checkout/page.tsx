@@ -16,8 +16,9 @@ import Typography from '@mui/material/Typography';
 import { ArrowLeft, Check, Minus, Plus, ShoppingBag } from '@phosphor-icons/react';
 
 import { paths } from '@/paths';
-import { apiConnectionError, apiEndpoint } from '@/lib/api-url';
 import { products as fallbackProducts, type Product } from '@/lib/shop-products';
+import { authClient } from '@/lib/auth/client';
+import { createDemoOrder, getDemoProducts } from '@/lib/demo-store';
 
 export default function CheckoutPage(): React.JSX.Element {
   const router = useRouter();
@@ -34,15 +35,7 @@ export default function CheckoutPage(): React.JSX.Element {
   }, []);
 
   React.useEffect(() => {
-    let endpoint: string;
-    try { endpoint = apiEndpoint('/api/products'); } catch { return; }
-    fetch(endpoint)
-      .then(async (response) => {
-        if (!response.ok) throw new Error('Could not load catalog');
-        const result = (await response.json()) as { data: Product[] };
-        setProducts(result.data);
-      })
-      .catch(() => { /* Keep the bundled catalog available when the API is offline. */ });
+    setProducts(getDemoProducts().filter((product) => product.active));
   }, []);
 
   const updateQuantity = (productId: string, amount: number): void => {
@@ -68,38 +61,24 @@ export default function CheckoutPage(): React.JSX.Element {
 
     const formData = new FormData(event.currentTarget);
     try {
-      const token = globalThis.localStorage.getItem('custom-auth-token');
-      const response = await fetch(apiEndpoint('/api/orders'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      const { data: user } = await authClient.getUser();
+      if (!user) throw new Error('Vui lòng đăng nhập trước khi đặt hàng.');
+      createDemoOrder({
+        userId: user.id,
+        customer: {
+          name: String(formData.get('name') ?? ''), email: String(formData.get('email') ?? ''),
+          phone: String(formData.get('phone') ?? ''), address: String(formData.get('address') ?? ''),
+          city: String(formData.get('city') ?? ''), postalCode: String(formData.get('postalCode') ?? ''),
         },
-        body: JSON.stringify({
-          customer: {
-            name: formData.get('name'),
-            email: formData.get('email'),
-            phone: formData.get('phone'),
-            address: formData.get('address'),
-            city: formData.get('city'),
-            postalCode: formData.get('postalCode'),
-          },
-          paymentMethod,
-          items: cartProducts.map((product) => ({ productId: product.id, quantity: cart[product.id] })),
-        }),
+        paymentMethod,
+        items: cartProducts.map((product) => ({ productId: product.id, quantity: cart[product.id] })),
       });
-
-      if (!response.ok) {
-        const result = (await response.json()) as { error?: string };
-        setSubmitError(result.error ?? 'Không thể tạo đơn hàng. Vui lòng thử lại.');
-        return;
-      }
 
       globalThis.localStorage.removeItem('atelier-cart');
       setCart({});
       setIsComplete(true);
     } catch (reason) {
-      setSubmitError(reason instanceof Error ? reason.message : apiConnectionError().message);
+      setSubmitError(reason instanceof Error ? reason.message : 'Không thể tạo đơn hàng.');
     } finally {
       setIsSubmitting(false);
     }

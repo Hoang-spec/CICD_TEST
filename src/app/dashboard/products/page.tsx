@@ -22,48 +22,32 @@ import { PencilSimpleIcon } from '@phosphor-icons/react/dist/ssr/PencilSimple';
 import { PlusIcon } from '@phosphor-icons/react/dist/ssr/Plus';
 import { TrashIcon } from '@phosphor-icons/react/dist/ssr/Trash';
 
-import { adminRequest } from '@/lib/admin-api';
+import { getDemoProducts, saveDemoProducts } from '@/lib/demo-store';
+import type { DemoProduct } from '@/lib/demo-store';
 
-interface Product {
-  id: string;
-  name: string;
-  category: string;
-  description: string;
-  price: number;
-  oldPrice: number | null;
-  image: string;
-  accent: string;
-  badge: string | null;
-  stock: number;
-  active: boolean;
-}
-
-type ProductInput = Omit<Product, 'id'>;
+type ProductInput = Omit<DemoProduct, 'id'>;
 const blankProduct: ProductInput = { name: '', category: '', description: '', price: 0, oldPrice: null, image: '', accent: '#e4f0e8', badge: null, stock: 0, active: true };
 
 export default function Page(): React.JSX.Element {
-  const [products, setProducts] = React.useState<Product[]>([]);
+  const [products, setProducts] = React.useState<DemoProduct[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [editing, setEditing] = React.useState<Product | null>(null);
+  const [editing, setEditing] = React.useState<DemoProduct | null>(null);
   const [form, setForm] = React.useState<ProductInput>(blankProduct);
   const [saving, setSaving] = React.useState(false);
 
-  const loadProducts = React.useCallback(async () => {
+  const loadProducts = React.useCallback(() => {
     setLoading(true);
-    try {
-      const result = await adminRequest<{ data: Product[] }>('/api/products');
-      setProducts(result.data);
-      setError(null);
-    } catch (reason) { setError((reason as Error).message); }
-    finally { setLoading(false); }
+    setProducts(getDemoProducts());
+    setError(null);
+    setLoading(false);
   }, []);
 
   React.useEffect(() => { void loadProducts(); }, [loadProducts]);
 
   const openCreate = (): void => { setEditing(null); setForm(blankProduct); setDialogOpen(true); };
-  const openEdit = (product: Product): void => {
+  const openEdit = (product: DemoProduct): void => {
     setEditing(product);
     const { id: _id, ...values } = product;
     setForm(values);
@@ -74,18 +58,26 @@ export default function Page(): React.JSX.Element {
     event.preventDefault();
     setSaving(true);
     try {
-      await adminRequest(editing ? `/api/products/${editing.id}` : '/api/products', {
-        method: editing ? 'PATCH' : 'POST', body: JSON.stringify(form),
-      });
+      const nextProducts = getDemoProducts();
+      if (editing) {
+        const index = nextProducts.findIndex((product) => product.id === editing.id);
+        if (index >= 0) nextProducts[index] = { ...nextProducts[index], ...form };
+      } else {
+        nextProducts.unshift({ id: `PRD-${globalThis.crypto.randomUUID()}`, ...form });
+      }
+      saveDemoProducts(nextProducts);
       setDialogOpen(false);
-      await loadProducts();
+      loadProducts();
     } catch (reason) { setError((reason as Error).message); }
     finally { setSaving(false); }
   };
 
-  const deleteProduct = async (product: Product): Promise<void> => {
+  const deleteProduct = async (product: DemoProduct): Promise<void> => {
     if (!globalThis.confirm(`Xóa sản phẩm “${product.name}”?`)) return;
-    try { await adminRequest(`/api/products/${product.id}`, { method: 'DELETE' }); await loadProducts(); }
+    try {
+      saveDemoProducts(getDemoProducts().map((item) => item.id === product.id ? { ...item, active: false } : item));
+      loadProducts();
+    }
     catch (reason) { setError((reason as Error).message); }
   };
 

@@ -28,7 +28,7 @@ const schema = zod.object({
 
 type Values = zod.infer<typeof schema>;
 
-const defaultValues = { email: '', password: '' } satisfies Values;
+const defaultValues = { email: 'admin@gmail.com', password: 'admin123' } satisfies Values;
 
 export function SignInForm(): React.JSX.Element {
   const { checkSession } = useUser();
@@ -60,11 +60,8 @@ export function SignInForm(): React.JSX.Element {
 
         await checkSession?.();
         globalThis.location.assign(user?.role === 'client' ? paths.shop : paths.dashboard.overview);
-      } catch (reason) {
-        setError('root', {
-          type: 'server',
-          message: reason instanceof Error ? reason.message : 'Không thể đăng nhập. Vui lòng thử lại.',
-        });
+      } catch {
+        setError('root', { type: 'server', message: 'Không thể đăng nhập trong chế độ demo. Vui lòng thử lại.' });
       } finally {
         setIsPending(false);
       }
@@ -141,7 +138,7 @@ export function SignInForm(): React.JSX.Element {
           </Button>
         </Stack>
       </form>
-      {/* <Alert color="warning">
+      <Alert color="warning">
         Admin: {' '}
         <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
           admin@gmail.com / admin123
@@ -150,7 +147,7 @@ export function SignInForm(): React.JSX.Element {
         <Typography component="span" sx={{ fontWeight: 700 }} variant="inherit">
           client@example.com / Client123
         </Typography>
-      </Alert> */}
+      </Alert>
     </Stack>
   );
 }

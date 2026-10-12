@@ -146,7 +146,7 @@ export function SignUpForm(): React.JSX.Element {
           </Button>
         </Stack>
       </form>
-      <Alert color="warning">Created users are not persisted</Alert>
+      <Alert color="warning">Tài khoản demo được lưu trên trình duyệt này; xóa dữ liệu trình duyệt sẽ xóa tài khoản.</Alert>
     </Stack>
   );
 }

@@ -15,7 +15,8 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 
-import { adminRequest } from '@/lib/admin-api';
+import { getDemoUsers } from '@/lib/auth/client';
+import { getDemoOrders, getDemoProducts } from '@/lib/demo-store';
 
 interface DashboardData {
   totalCustomers: number;
@@ -36,10 +37,28 @@ export default function Page(): React.JSX.Element {
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
-    adminRequest<{ data: DashboardData }>('/api/admin/dashboard')
-      .then((result) => setData(result.data))
-      .catch((reason: Error) => setError(reason.message))
-      .finally(() => setLoading(false));
+    try {
+      const orders = getDemoOrders();
+      const products = getDemoProducts();
+      const sold = new Map<string, number>();
+      for (const order of orders.filter((item) => item.status !== 'cancelled')) {
+        for (const item of order.items) sold.set(item.productId, (sold.get(item.productId) ?? 0) + item.quantity);
+      }
+      setData({
+        totalCustomers: getDemoUsers().filter((user) => user.role !== 'admin').length,
+        totalProducts: products.filter((product) => product.active).length,
+        totalOrders: orders.length,
+        pendingOrders: orders.filter((order) => order.status === 'pending').length,
+        revenue: orders.filter((order) => order.status !== 'cancelled').reduce((sum, order) => sum + order.total, 0),
+        lowStockProducts: products.filter((product) => product.active && product.stock <= 5),
+        bestSellingProducts: [...sold.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([id, quantity]) => ({ product: products.find((product) => product.id === id), quantity })),
+        latestOrders: orders.slice(0, 5),
+      });
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Không đọc được dữ liệu demo.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   if (loading) return <Stack alignItems="center" sx={{ py: 8 }}><CircularProgress /></Stack>;

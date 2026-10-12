@@ -19,7 +19,7 @@ import { CaretRight, Heart, MagnifyingGlass, Minus, Plus, ShoppingBag, Sparkle, 
 
 import { paths } from '@/paths';
 import { authClient } from '@/lib/auth/client';
-import { apiEndpoint } from '@/lib/api-url';
+import { getDemoProducts } from '@/lib/demo-store';
 import { useUser } from '@/hooks/use-user';
 import { products as fallbackProducts, type Product } from '@/lib/shop-products';
 
@@ -37,15 +37,7 @@ export default function ShopPage(): React.JSX.Element {
   const categories = React.useMemo(() => ['All products', ...new Set(products.map((product) => product.category))], [products]);
 
   React.useEffect(() => {
-    let endpoint: string;
-    try { endpoint = apiEndpoint('/api/products'); } catch { return; }
-    fetch(endpoint)
-      .then(async (response) => {
-        if (!response.ok) throw new Error('Could not load catalog');
-        const result = (await response.json()) as { data: Product[] };
-        setProducts(result.data);
-      })
-      .catch(() => { /* Keep the bundled catalog available when the API is offline. */ });
+    setProducts(getDemoProducts().filter((product) => product.active));
   }, []);
 
   React.useEffect(() => {

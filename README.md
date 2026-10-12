@@ -39,17 +39,14 @@ to save more time and design efforts :)
 
 - Clone the repo: `git clone https://github.com/devias-io/material-kit-react.git`
 - Make sure your Node.js and npm versions are up to date
-- Start the API in a separate terminal: `cd backend && npm install && npm run dev` (API at `http://localhost:4000`)
-- Install frontend dependencies from the project root: `npm install` or `yarn`
-- Start the frontend: `npm run dev` or `yarn dev`
+- Install dependencies: `npm install` or `yarn`
+- Start the app: `npm run dev` or `yarn dev`
 - Open browser: `http://localhost:3000`
 - Admin login: `admin@gmail.com` / `admin123`
 
 ### Render deployment
 
-Deploy the API as a public Render Web Service and the Next.js app as a separate Web Service. In the **frontend** service, set `NEXT_PUBLIC_API_URL` to the backend's public base URL (for example, `https://atelier-api.onrender.com`, without a trailing slash). Next.js embeds `NEXT_PUBLIC_*` values during the build, so save the variable and trigger a new frontend deploy after changing it. In the **backend** service, set `CLIENT_ORIGIN` to the exact frontend origin (for example, `https://atelier-shop.onrender.com`), plus `JWT_SECRET`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD_B64`. The production admin signs in with the configured `ADMIN_EMAIL` and the original password entered before it was base64-encoded for `ADMIN_PASSWORD_B64`.
-
-Verify the API URL by opening `<backend-url>/api/health`; it should return `{"status":"ok","service":"atelier-backend"}`. The value configured in the frontend must point to that same backend service.
+Deploy only the Next.js web service. Use the repository root, build command `npm install && npm run build`, and start command `npm run start`; no API URL or backend service is needed. This project currently runs in demo mode: accounts, catalog edits, and orders are stored in each browser's local storage. They do not sync across devices and this client-side demo login is not suitable for protecting real production data.
 
 ## File Structure
 
