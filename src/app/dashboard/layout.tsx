@@ -30,11 +30,11 @@ export default function Layout({ children }: LayoutProps): React.JSX.Element {
       />
       <Box
         sx={{
-          bgcolor: 'var(--mui-palette-background-default)',
+          bgcolor: '#27f527',
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',
-          minHeight: '100%',
+          minHeight: '100vh',
         }}
       >
         <SideNav />
