@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
@@ -8,6 +11,18 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: atelier
+          POSTGRES_PASSWORD: ci_test_only
+          POSTGRES_DB: atelier_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U atelier -d atelier_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,3 +34,51 @@ jobs:
       - run: npm run build
       - run: npm ci --prefix backend
       - run: node --check backend/src/server.js
+      - run: npm test --prefix backend
+        env:
+          TEST_DATABASE_URL: postgres://atelier:ci_test_only@localhost:5432/atelier_test
+
+  deploy-backend:
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+    concurrency:
+      group: atelier-backend-production
+      cancel-in-progress: false
+    env:
+      DEPLOY_HOST: ${{ secrets.EC2_HOST }}
+      DEPLOY_USER: ubuntu
+      RELEASE_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare SSH credentials
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.EC2_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          test -n "$DEPLOY_HOST"
+          test -n "$SSH_PRIVATE_KEY"
+          test -n "$SSH_KNOWN_HOSTS"
+          [[ "$DEPLOY_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+          ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null
+      - name: Package backend source
+        run: |
+          tar --exclude=node_modules --exclude=.env --exclude='.env.*' --exclude=data --exclude=tests \
+            -czf "$RUNNER_TEMP/backend-$RELEASE_SHA.tar.gz" backend
+      - name: Upload and deploy over SSH
+        run: |
+          set -euo pipefail
+          SSH_OPTIONS=(-i ~/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15)
+          scp "${SSH_OPTIONS[@]}" "$RUNNER_TEMP/backend-$RELEASE_SHA.tar.gz" "$DEPLOY_USER@$DEPLOY_HOST:/tmp/backend-$RELEASE_SHA.tar.gz"
+          scp "${SSH_OPTIONS[@]}" deploy/aws-demo/deploy.sh "$DEPLOY_USER@$DEPLOY_HOST:/tmp/deploy-$RELEASE_SHA.sh"
+          ssh "${SSH_OPTIONS[@]}" "$DEPLOY_USER@$DEPLOY_HOST" "bash /tmp/deploy-$RELEASE_SHA.sh $RELEASE_SHA"
+      - name: Remove SSH credentials
+        if: always()
+        run: rm -f ~/.ssh/deploy_key ~/.ssh/known_hosts

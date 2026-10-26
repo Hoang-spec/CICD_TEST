@@ -1,52 +1,37 @@
-# CI/CD setup for Jenkins and Docker
+# Run and deploy Atelier
 
-This repository contains a Next.js frontend and an Express API. Jenkins builds and publishes one Docker image for each service, then can deploy both services to a Linux host with Docker Compose. GitHub Actions runs validation on pushes to `main` and pull requests; Jenkins handles image publishing and deployment.
+AWS backend preparation: see [EC2 + RDS + ECR guide](deploy/aws/README.vi.md) and the backend-only Compose configuration in `deploy/aws`.
 
-## Run locally with Docker Compose
-
-From the repository root:
+## Local
 
 ```sh
 docker compose up --build -d
 ```
 
-Open `http://localhost:3000`; the API health endpoint is `http://localhost:4000/api/health`. The API stores its JSON database in a named Docker volume. Set a private `JWT_SECRET` before using this setup outside local development. Local demo accounts are documented in `backend/README.md`.
+Open http://localhost:3000. Compose starts PostgreSQL, one-shot migrations and seed, Express, then Next.js. Data lives in `postgres-data`. Local administrator: `admin@gmail.com` / `admin123`; register client accounts through the UI. Local database credentials are development defaults.
 
-## Jenkins prerequisites
+## Production
 
-Install Jenkins with Git, Pipeline, Credentials Binding, and SSH Agent plugins. The Jenkins agent needs Git, Node.js 20+, Docker Engine with permission to build images, and the `cleanWs` step (Workspace Cleanup plugin). The production host needs Docker Engine and the Docker Compose plugin.
+Build frontend with `API_INTERNAL_URL=http://backend:4000`. Deploy the frontend and backend images using `docker-compose.prod.yml`. The browser calls the frontend's `/api`; Next proxies to Express on the private Docker network. Put an HTTPS reverse proxy in front of the frontend (bound to loopback by default). Production session cookies require HTTPS.
 
-Create these Jenkins credentials:
+Set these variables on the host:
 
-| ID | Kind | Value |
-| --- | --- | --- |
-| `dockerhub-cred` | Username with password | Docker Hub username and access token |
-| `server-ssh-key` | SSH Username with private key | Key authorized on the production host |
-| `jwt-secret` | Secret text | Long random signing secret |
-| `admin-email` | Secret text | Initial production administrator email |
-| `admin-password` | Secret text | Strong initial production administrator password |
+- `DOCKERHUB_USERNAME`, `IMAGE_TAG` — image repository and release tag.
+- `POSTGRES_PASSWORD` — strong random URL-safe letters, digits, underscores or hyphens; used in the connection URI.
+- `ADMIN_EMAIL`, `ADMIN_PASSWORD_B64` — initial administrator seed credentials; Base64 is transport encoding, not encryption.
+- `CLIENT_ORIGIN` — exact HTTPS frontend origin.
+- Optional `FRONTEND_PORT` and `FRONTEND_BIND`; defaults are 3000 and 127.0.0.1.
 
-Create a Pipeline or Multibranch Pipeline job for this GitHub repository, using the `main` branch and the checked-in `Jenkinsfile`. For a standard Pipeline job, choose “Pipeline script from SCM” and point it at this repository; configure repository credentials on the job if it is private. Add the GitHub webhook URL `https://<jenkins-host>/github-webhook/` with JSON content type and push events (use HTTPS and make Jenkins reachable from GitHub).
+Compose waits for DB health, applies migrations, seeds missing records, starts API after seed, and frontend after API readiness. Seed never resets an existing account's password. For a release, recreate the one-shot migration/seed containers as well as app containers (`docker compose up -d --force-recreate` after pulling). Use a maintenance window for migrations that affect running writes.
 
-## Build and deploy
+## Jenkins and CI
 
-Run the Jenkins job. With `DEPLOY_HOST` empty, it validates the app and pushes tagged plus `latest` frontend and backend images to Docker Hub. To deploy, set:
+Jenkins requires Docker, Git, Node 20+, Credentials Binding, SSH Agent and Workspace Cleanup. Configure credentials `dockerhub-cred`, `server-ssh-key`, `postgres-password`, `admin-email` and `admin-password`. Set `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_DIR`, `CLIENT_ORIGIN`. The pipeline builds/pushes both images, optionally uploads the production Compose file and secrets to the target host. `PUBLIC_API_URL` and `jwt-secret` are no longer used.
 
-| Parameter | Example |
-| --- | --- |
-| `PUBLIC_API_URL` | `https://api.example.com` or `http://<server-ip>:4000` |
-| `DEPLOY_HOST` | Public hostname or IP of the production host |
-| `DEPLOY_USER` | SSH account on that host |
-| `DEPLOY_DIR` | `/opt/material-kit-react` |
-| `CLIENT_ORIGIN` | `https://shop.example.com` |
+GitHub Actions runs typecheck, frontend production build and API integration tests with a PostgreSQL service. Jenkins validates source/builds images; use the CI integration test status as a release gate.
 
-The `PUBLIC_API_URL` value is compiled into the frontend image and must be reachable by users' browsers. `CLIENT_ORIGIN` must exactly match the frontend origin. Open the configured frontend and backend ports on the host (defaults: 3000 and 4000), or place a TLS reverse proxy in front and adjust the port parameters in the server `.env` file.
+## Migration from JSON deployments
 
-On the first production start, the API creates its database volume and creates the administrator account from Jenkins credentials. The production image does not create the repository's demo accounts. Keep the credentials stable after initialization: changing the Jenkins admin password does not update an existing account in the persisted JSON database. Back up the `backend-data` Docker volume before host maintenance.
+Do not start a freshly seeded production stack over an old JSON deployment and expect records to move automatically. Back up the JSON volume, stop application writes, provision an empty PostgreSQL target and run `migrate` plus `import:json` validation/apply as described in `backend/README.md`. Do not seed before import. Review unsupported demo card orders and invalid records explicitly. Validate counts, totals and stock before switching traffic; retain the old volume.
 
-## Notes
-
-- Docker Hub repositories must allow the Jenkins credentials to push and the server to pull.
-- The frontend image tag and backend image tag are set from the Jenkins build's Git commit; deployment uses that same tag.
-- Use a strong unique `JWT_SECRET`; replacing it invalidates existing login tokens.
-- This project stores application records in a JSON file. It is suitable for a small demo deployment; concurrent writes and multi-replica scaling need a database-backed API.
+Back up PostgreSQL with `pg_dump` and verify a restore before rollout. Never run `docker compose down -v` on production. After new database writes, rollback must retain PostgreSQL data and use compatible application/schema versions; returning to the stale JSON file loses those writes. The implementation has been tested locally; no production deployment is performed by editing these files.

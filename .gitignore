@@ -34,3 +34,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Backend generated dependencies and local secrets
+backend/node_modules/
+backend/.env
+.env

@@ -1,0 +1,65 @@
+name: atelier-demo
+x-api: &api
+  image: atelier-backend:${RELEASE_TAG:?Set RELEASE_TAG}
+  build: ./backend
+  environment:
+    NODE_ENV: production
+    PORT: 4000
+    DATABASE_URL: postgres://atelier:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/atelier
+    CLIENT_ORIGIN: ${CLIENT_ORIGIN:?Set CLIENT_ORIGIN}
+    TRUST_PROXY_HOPS: 1
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: atelier
+      POSTGRES_USER: atelier
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U atelier -d atelier]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+  migrate:
+    <<: *api
+    profiles: [tools]
+    command: [npm, run, migrate]
+  seed:
+    <<: *api
+    profiles: [tools]
+    env_file: .env.seed
+    command: [npm, run, seed]
+  backend:
+    <<: *api
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:4000/api/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  proxy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+volumes:
+  postgres-data:

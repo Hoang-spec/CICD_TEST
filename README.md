@@ -35,18 +35,15 @@ to save more time and design efforts :)
 | -                        | ✔ Complete Users Flows                                                       |
 | -                        | ✔ Premium Technical Support                                                  |
 
-## Quick start
+## Quick start — Atelier storefront and API
 
-- Clone the repo: `git clone https://github.com/devias-io/material-kit-react.git`
-- Make sure your Node.js and npm versions are up to date
-- Install dependencies: `npm install` or `yarn`
-- Start the app: `npm run dev` or `yarn dev`
-- Open browser: `http://localhost:3000`
-- Admin login: `admin@gmail.com` / `admin123`
+```sh
+docker compose up --build -d
+```
 
-### Render deployment
+Open http://localhost:3000. This starts Next.js, Express and PostgreSQL, runs migrations and seeds a local administrator (`admin@gmail.com` / `admin123`). Register your own customer account through Sign up. Accounts, catalog, stock and orders now persist on the server and sync across devices.
 
-Deploy only the Next.js web service. Use the repository root, build command `npm install && npm run build`, and start command `npm run start`; no API URL or backend service is needed. This project currently runs in demo mode: accounts, catalog edits, and orders are stored in each browser's local storage. They do not sync across devices and this client-side demo login is not suitable for protecting real production data.
+See [backend setup and API](backend/README.md), [deployment](DEPLOYMENT.md) and [design analysis](docs/BACKEND_DATABASE_ANALYSIS.vi.md). For running without Docker, configure PostgreSQL and run the backend migrations/seed before starting both Node services. A frontend-only deployment is no longer sufficient.
 
 ## File Structure
 

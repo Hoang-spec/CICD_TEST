@@ -1,0 +1,15 @@
+# Apply alongside compose.yml. API_IP must be the associated Elastic IP.
+services:
+  proxy:
+    image: caddy:2.11.7-alpine
+    environment:
+      API_IP: ${API_IP:?Set API_IP to the Elastic IP}
+    ports:
+      - "443:443"
+    volumes:
+      - ./Caddyfile.https:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+volumes:
+  caddy-data:
+  caddy-config:

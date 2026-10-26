@@ -1,6 +1,63 @@
 services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: atelier
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-atelier_local_only}
+      POSTGRES_DB: atelier
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U atelier -d atelier"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  migrate:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgres://atelier:${POSTGRES_PASSWORD:-atelier_local_only}@db:5432/atelier
+    command: ["npm", "run", "migrate"]
+    depends_on:
+      db:
+        condition: service_healthy
+  seed:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgres://atelier:${POSTGRES_PASSWORD:-atelier_local_only}@db:5432/atelier
+      NODE_ENV: development
+    command: ["npm", "run", "seed"]
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgres://atelier:${POSTGRES_PASSWORD:-atelier_local_only}@db:5432/atelier
+      CLIENT_ORIGIN: http://localhost:${FRONTEND_PORT:-3000}
+      NODE_ENV: development
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-4000}:4000"
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/api/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
   web:
-    build: .
+    build:
+      context: .
+      args:
+        API_INTERNAL_URL: http://backend:4000
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
+volumes:
+  postgres-data:

@@ -4,7 +4,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 COPY src ./src
-RUN mkdir -p /app/data && chown -R node:node /app
+COPY migrations ./migrations
+RUN chown -R node:node /app
 USER node
 ENV PORT=4000
 EXPOSE 4000
