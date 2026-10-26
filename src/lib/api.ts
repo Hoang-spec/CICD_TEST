@@ -8,7 +8,15 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
 		cache: "no-store",
 	});
 	if (response.status === 204) return undefined as T;
-	const body = (await response.json()) as { error?: string };
+	let body: { error?: string };
+	try {
+		body = (await response.json()) as { error?: string };
+	} catch {
+		throw new ApiError(
+			`Máy chủ trả phản hồi không hợp lệ (HTTP ${response.status}). Vui lòng thử lại sau.`,
+			response.status
+		);
+	}
 	if (!response.ok) throw new ApiError(body.error ?? "Không thể kết nối máy chủ", response.status);
 	return body as T;
 }

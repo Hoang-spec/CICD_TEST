@@ -59,10 +59,17 @@ jobs:
           SSH_KNOWN_HOSTS: ${{ secrets.EC2_SSH_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
-          test -n "$DEPLOY_HOST"
-          test -n "$SSH_PRIVATE_KEY"
-          test -n "$SSH_KNOWN_HOSTS"
-          [[ "$DEPLOY_HOST" =~ ^[a-zA-Z0-9.-]+$ ]]
+          missing=0
+          for mapping in DEPLOY_HOST:EC2_HOST SSH_PRIVATE_KEY:EC2_SSH_PRIVATE_KEY SSH_KNOWN_HOSTS:EC2_SSH_KNOWN_HOSTS; do
+            variable=${mapping%%:*}
+            secret=${mapping#*:}
+            if [[ -z "${!variable:-}" ]]; then
+              echo "::error::Missing Actions secret $secret. Add it to repository secrets or the production environment."
+              missing=1
+            fi
+          done
+          (( missing == 0 )) || exit 1
+          [[ "$DEPLOY_HOST" =~ ^[a-zA-Z0-9.-]+$ ]] || { echo '::error::EC2_HOST must be an IP or hostname without https:// or a path'; exit 1; }
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts

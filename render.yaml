@@ -1,0 +1,12 @@
+# Render Blueprint for source-based frontend builds. Existing services must apply
+# the same env settings in their dashboard, or explicitly adopt this Blueprint.
+services:
+  - type: web
+    name: atelier-frontend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/ready
+    envVars:
+      - key: API_INTERNAL_URL
+        value: https://54.253.83.155
