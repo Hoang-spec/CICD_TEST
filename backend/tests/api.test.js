@@ -157,6 +157,25 @@ test("concurrent final-item checkout and idempotent retries", async () => {
 	assert.equal((await request(`/products/${product.id}`)).body.data.stock, 0);
 	assert.equal(Number((await pool.query("SELECT count(*) FROM orders")).rows[0].count), 1);
 });
+test("fixed shipping fee applies to orders above the former free-shipping threshold", async () => {
+	const created = await request("/products", {
+		method: "POST",
+		cookie: admin,
+		body: { name: "High value test item", category: "Testing", price: 100, stock: 1 },
+	});
+	assert.equal(created.status, 201);
+	const result = await request("/orders", {
+		method: "POST",
+		cookie: client,
+		key: "fixed-shipping-high-value",
+		body: { customer, paymentMethod: "cod", items: [{ productId: created.body.data.id, quantity: 1 }] },
+	});
+	assert.equal(result.status, 201, JSON.stringify(result.body));
+	assert.equal(result.body.data.subtotal, "100.00");
+	assert.equal(result.body.data.shipping, "5.00");
+	assert.equal(result.body.data.total, "105.00");
+	assert.deepEqual(result.body.data.customer, customer);
+});
 test("concurrent cancellation restores inventory exactly once", async () => {
 	const results = await Promise.all([
 		request(`/orders/${order.id}/status`, { method: "PATCH", cookie: admin, body: { status: "cancelled" } }),

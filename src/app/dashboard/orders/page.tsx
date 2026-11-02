@@ -77,7 +77,9 @@ export default function Page(): React.JSX.Element {
 							<TableRow>
 								<TableCell>Mã đơn</TableCell>
 								<TableCell>Khách hàng</TableCell>
+								<TableCell>Giao đến</TableCell>
 								<TableCell>Sản phẩm</TableCell>
+								<TableCell>Phí ship</TableCell>
 								<TableCell>Tổng tiền</TableCell>
 								<TableCell>Ngày đặt</TableCell>
 								<TableCell>Trạng thái</TableCell>
@@ -99,8 +101,18 @@ export default function Page(): React.JSX.Element {
 											<Typography variant="caption" color="text.secondary">
 												{order.customer.email}
 											</Typography>
+											<Typography variant="caption" display="block" color="text.secondary">
+												{order.customer.phone}
+											</Typography>
+										</TableCell>
+										<TableCell sx={{ minWidth: 200, maxWidth: 280 }}>
+											<Typography variant="body2">{order.customer.address}</Typography>
+											<Typography variant="caption" color="text.secondary">
+												{[order.customer.city, order.customer.postalCode].filter(Boolean).join(", ")}
+											</Typography>
 										</TableCell>
 										<TableCell>{order.items.map((item) => `${item.name} × ${item.quantity}`).join(", ")}</TableCell>
+										<TableCell>${Number(order.shipping).toFixed(2)}</TableCell>
 										<TableCell>${Number(order.total).toFixed(2)}</TableCell>
 										<TableCell>{new Date(order.createdAt).toLocaleString()}</TableCell>
 										<TableCell>

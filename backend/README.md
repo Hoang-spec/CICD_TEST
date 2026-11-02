@@ -25,6 +25,8 @@ Money is exact `numeric(14,2)` in SQL and decimal strings in responses. Currency
 
 Lists return `{data,pagination:{page,pageSize,total}}`, with default size 20 and maximum 100. Errors return `{error,requestId}` and validation may add `fields`. Frontend converts decimal text only for display/estimates. Final amounts always come from the server.
 
+New orders have a fixed $5 shipping fee, calculated by the server; previously placed orders keep their stored totals. Customers can review delivery details and order progress, while admins can review recipient/address details and update allowed order statuses.
+
 ## Endpoints
 
 | Routes | Access |

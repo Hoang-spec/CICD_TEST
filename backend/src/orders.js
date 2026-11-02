@@ -80,7 +80,7 @@ orders.post("/orders", async (req, res) => {
 			);
 		}
 		await db.query(
-			`WITH amounts AS (SELECT sum(price*quantity) subtotal FROM order_items WHERE order_id=$1), totals AS (SELECT subtotal,CASE WHEN subtotal>0 AND subtotal<50 THEN 5 ELSE 0 END shipping FROM amounts) UPDATE orders SET subtotal=t.subtotal,shipping=t.shipping,total=t.subtotal+t.shipping FROM totals t WHERE orders.id=$1`,
+			`WITH amounts AS (SELECT sum(price*quantity) subtotal FROM order_items WHERE order_id=$1), totals AS (SELECT subtotal,CASE WHEN subtotal>0 THEN 5 ELSE 0 END shipping FROM amounts) UPDATE orders SET subtotal=t.subtotal,shipping=t.shipping,total=t.subtotal+t.shipping FROM totals t WHERE orders.id=$1`,
 			[id]
 		);
 		await db.query(`INSERT INTO order_status_history(order_id,to_status,actor_user_id) VALUES($1,'pending',$2)`, [

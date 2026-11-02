@@ -63,7 +63,7 @@ export default function CheckoutPage(): React.JSX.Element {
 
 	const cartProducts = products.filter((product) => cart[product.id]);
 	const cartTotal = cartProducts.reduce((total, product) => total + product.price * cart[product.id], 0);
-	const shipping = cartTotal > 0 && cartTotal < 50 ? 5 : 0;
+	const shipping = cartTotal > 0 ? 5 : 0;
 	const total = cartTotal + shipping;
 
 	const submitOrder = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {

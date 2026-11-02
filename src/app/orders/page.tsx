@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Alert, Button, Card, CardContent, Container, Stack, Typography } from "@mui/material";
+import { Alert, Button, Card, CardContent, Container, Stack, Step, StepLabel, Stepper, Typography } from "@mui/material";
 
 import { paths } from "@/paths";
 import { getOrders, type StoreOrder } from "@/lib/store-api";
@@ -25,6 +25,7 @@ export default function OrdersPage(): React.JSX.Element {
 		delivered: "Đã giao",
 		cancelled: "Đã hủy",
 	};
+	const deliverySteps = ["pending", "processing", "shipped", "delivered"] as const;
 	return (
 		<AuthGuard>
 			<Container maxWidth="md" sx={{ py: 5 }}>
@@ -41,8 +42,24 @@ export default function OrdersPage(): React.JSX.Element {
 							<CardContent>
 								<Stack spacing={1}>
 									<Typography variant="h6">{order.id}</Typography>
-									<Typography>
-										{labels[order.status]} · {new Date(order.createdAt).toLocaleString()}
+									<Typography color="text.secondary">
+										Đặt lúc {new Date(order.createdAt).toLocaleString()}
+									</Typography>
+									{order.status === "cancelled" ? (
+										<Alert severity="error">Đơn hàng đã bị hủy.</Alert>
+									) : (
+										<Stepper activeStep={deliverySteps.indexOf(order.status)} alternativeLabel sx={{ py: 2 }}>
+											{deliverySteps.map((status) => (
+												<Step key={status}>
+													<StepLabel>{labels[status]}</StepLabel>
+												</Step>
+											))}
+										</Stepper>
+									)}
+									<Typography variant="subtitle2">Thông tin giao hàng</Typography>
+									<Typography>{order.customer.name} · {order.customer.phone}</Typography>
+									<Typography color="text.secondary">
+										{order.customer.address}, {order.customer.city} {order.customer.postalCode}
 									</Typography>
 									{order.items.map((item) => (
 										<Typography key={item.productId}>
