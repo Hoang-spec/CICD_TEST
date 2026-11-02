@@ -30,7 +30,7 @@ export default function Layout({ children }: LayoutProps): React.JSX.Element {
       />
       <Box
         sx={{
-          bgcolor: '#27f527',
+          bgcolor: '#f7f8f5',
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',
